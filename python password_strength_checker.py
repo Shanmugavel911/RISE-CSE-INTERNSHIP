@@ -1,5 +1,5 @@
-# 🔐 Password Strength Checker
-# Made by me as part of a Cybersecurity & Ethical Hacking project
+# Password Checker - Simple App made by me
+# Checks how strong a password is and gives suggestions
 
 import tkinter as tk
 from tkinter import messagebox
@@ -7,176 +7,137 @@ import re
 import random
 import string
 
-class PasswordStrengthChecker:
+class PasswordApp:
     def __init__(self):
-        # Set up the main window
-        self.window = tk.Tk()
-        self.window.title("Password Strength Checker")
-        self.window.geometry("600x500")
-        self.window.configure(bg="#f0f0f0")
+        self.win = tk.Tk()
+        self.win.title("Password Checker")
+        self.win.geometry("600x500")
+        self.win.configure(bg="#eaeaea")
+        self.build_ui()
 
-        # Create all the UI elements
-        self.create_widgets()
+    def build_ui(self):
+        tk.Label(self.win, text="Password Strength Checker", font=("Arial", 18, "bold"), bg="#eaeaea").pack(pady=20)
+        tk.Label(self.win, text="Enter a password to test", font=("Arial", 11), bg="#eaeaea").pack()
 
-    def create_widgets(self):
-        # Title
-        title = tk.Label(self.window, text="🔐 Password Strength Checker", font=("Arial", 20, "bold"), bg="#f0f0f0", fg="#2c3e50")
-        title.pack(pady=20)
+        input_box = tk.Frame(self.win, bg="#eaeaea")
+        input_box.pack(pady=15)
 
-        # Subtitle
-        subtitle = tk.Label(self.window, text="Enter your password below to check its strength", font=("Arial", 12), bg="#f0f0f0", fg="#7f8c8d")
-        subtitle.pack()
+        tk.Label(input_box, text="Password:", font=("Arial", 11), bg="#eaeaea").pack(anchor="w")
+        self.entry = tk.Entry(input_box, font=("Arial", 11), width=40, show="*")
+        self.entry.pack(pady=5)
 
-        # Frame for input field
-        input_frame = tk.Frame(self.window, bg="#f0f0f0")
-        input_frame.pack(pady=20, padx=20, fill="x")
+        self.show_pw = tk.BooleanVar()
+        tk.Checkbutton(input_box, text="Show", variable=self.show_pw, command=self.toggle_pw, bg="#eaeaea").pack(anchor="w")
 
-        tk.Label(input_frame, text="Password:", font=("Arial", 12, "bold"), bg="#f0f0f0").pack(anchor="w")
-        self.password_entry = tk.Entry(input_frame, font=("Arial", 12), width=50, show="*")
-        self.password_entry.pack(fill="x", pady=5)
+        tk.Button(self.win, text="Check", font=("Arial", 11), bg="#007acc", fg="white", command=self.check_pw).pack(pady=10)
+        tk.Button(self.win, text="Generate Strong Password", font=("Arial", 10), bg="#2e8b57", fg="white", command=self.make_password).pack()
 
-        # Show/hide password
-        self.show_password_var = tk.BooleanVar()
-        tk.Checkbutton(input_frame, text="Show Password", variable=self.show_password_var, command=self.toggle_password_visibility, bg="#f0f0f0").pack(anchor="w")
+        self.output = tk.Frame(self.win, bg="#eaeaea")
+        self.output.pack(pady=15)
 
-        # Check button
-        tk.Button(self.window, text="Check Password Strength", font=("Arial", 12, "bold"), bg="#3498db", fg="white", command=self.check_password_strength).pack(pady=10)
+    def toggle_pw(self):
+        self.entry.config(show="" if self.show_pw.get() else "*")
 
-        # Frame for results
-        self.result_frame = tk.Frame(self.window, bg="#f0f0f0")
-        self.result_frame.pack(pady=10, padx=20, fill="both", expand=True)
-
-        # Generate password button
-        tk.Button(self.window, text="Generate Strong Password", font=("Arial", 11), bg="#27ae60", fg="white", command=self.generate_strong_password).pack(pady=10)
-
-    def toggle_password_visibility(self):
-        if self.show_password_var.get():
-            self.password_entry.config(show="")
-        else:
-            self.password_entry.config(show="*")
-
-    def check_password_strength(self):
-        password = self.password_entry.get()
-        if not password:
-            messagebox.showwarning("Warning", "Please enter a password to check!")
+    def check_pw(self):
+        pwd = self.entry.get()
+        if not pwd:
+            messagebox.showwarning("Empty", "Enter something first.")
             return
 
-        for widget in self.result_frame.winfo_children():
-            widget.destroy()
+        for w in self.output.winfo_children():
+            w.destroy()
 
-        score, feedback, suggestions = self.analyze_password(password)
+        score, pros, cons = self.evaluate(pwd)
 
         if score >= 80:
-            strength = "STRONG 💪"
-            color = "#27ae60"
+            msg = "Strong"
+            color = "green"
         elif score >= 60:
-            strength = "MODERATE ⚠️"
-            color = "#f39c12"
+            msg = "Okay"
+            color = "orange"
         else:
-            strength = "WEAK ❌"
-            color = "#e74c3c"
+            msg = "Weak"
+            color = "red"
 
-        # Display results
-        tk.Label(self.result_frame, text=f"Password Strength: {strength}", font=("Arial", 16, "bold"), fg=color, bg="#f0f0f0").pack(pady=10)
-        tk.Label(self.result_frame, text=f"Score: {score}/100", font=("Arial", 12), bg="#f0f0f0").pack()
+        tk.Label(self.output, text=f"Result: {msg}", font=("Arial", 13, "bold"), fg=color, bg="#eaeaea").pack()
+        tk.Label(self.output, text=f"Score: {score}/100", font=("Arial", 11), bg="#eaeaea").pack()
 
-        tk.Label(self.result_frame, text="Analysis:", font=("Arial", 12, "bold"), bg="#f0f0f0").pack(pady=(15, 5), anchor="w")
-        for item in feedback:
-            tk.Label(self.result_frame, text=f"• {item}", font=("Arial", 10), bg="#f0f0f0", anchor="w", wraplength=500, justify="left").pack(anchor="w", padx=20)
+        if pros:
+            tk.Label(self.output, text="Good:", font=("Arial", 11, "bold"), bg="#eaeaea").pack(anchor="w")
+            for i in pros:
+                tk.Label(self.output, text=f"- {i}", font=("Arial", 10), bg="#eaeaea").pack(anchor="w", padx=20)
 
-        if suggestions:
-            tk.Label(self.result_frame, text="Suggestions:", font=("Arial", 12, "bold"), fg="#e74c3c", bg="#f0f0f0").pack(pady=(15, 5), anchor="w")
-            for s in suggestions:
-                tk.Label(self.result_frame, text=f"• {s}", font=("Arial", 10), bg="#f0f0f0", anchor="w", wraplength=500, justify="left").pack(anchor="w", padx=20)
+        if cons:
+            tk.Label(self.output, text="Suggestions:", font=("Arial", 11, "bold"), fg="red", bg="#eaeaea").pack(anchor="w", pady=(10, 0))
+            for i in cons:
+                tk.Label(self.output, text=f"- {i}", font=("Arial", 10), bg="#eaeaea").pack(anchor="w", padx=20)
 
-    def analyze_password(self, password):
-        score = 0
-        feedback = []
-        suggestions = []
+    def evaluate(self, p):
+        s = 0
+        good = []
+        bad = []
 
-        length = len(password)
-        if length >= 12:
-            score += 25
-            feedback.append(f"✅ Great! Password length is {length} (12+ is best)")
-        elif length >= 8:
-            score += 15
-            feedback.append(f"⚠️ Okay, password has {length} characters")
-            suggestions.append("Try to make your password 12+ characters")
+        if len(p) >= 12:
+            s += 25
+            good.append("Good length.")
+        elif len(p) >= 8:
+            s += 15
+            bad.append("Try 12+ chars.")
         else:
-            score += 5
-            feedback.append(f"❌ Too short! Only {length} characters")
-            suggestions.append("Make your password longer (at least 8 characters)")
+            s += 5
+            bad.append("Too short.")
 
-        if re.search(r'[a-z]', password):
-            score += 10
-            feedback.append("✅ Has lowercase letters")
-        else:
-            suggestions.append("Add some lowercase letters")
+        if re.search(r'[a-z]', p): s += 10; good.append("Has lowercase.")
+        else: bad.append("Add lowercase letters.")
 
-        if re.search(r'[A-Z]', password):
-            score += 10
-            feedback.append("✅ Has uppercase letters")
-        else:
-            suggestions.append("Add uppercase letters")
+        if re.search(r'[A-Z]', p): s += 10; good.append("Has uppercase.")
+        else: bad.append("Add uppercase letters.")
 
-        if re.search(r'\d', password):
-            score += 10
-            feedback.append("✅ Has numbers")
-        else:
-            suggestions.append("Add numbers (0–9)")
+        if re.search(r'\d', p): s += 10; good.append("Has numbers.")
+        else: bad.append("Add some digits.")
 
-        if re.search(r'[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]', password):
-            score += 15
-            feedback.append("✅ Has special characters")
-        else:
-            suggestions.append("Add special characters (!, @, #, etc.)")
+        if re.search(r'[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]', p): s += 15; good.append("Has symbols.")
+        else: bad.append("Add special characters.")
 
-        if re.search(r'(.)\1{2,}', password):
-            score -= 10
-            feedback.append("⚠️ Repeating characters found")
-            suggestions.append("Avoid using the same character multiple times")
+        if re.search(r'(.)\1{2,}', p):
+            s -= 10
+            bad.append("Too many repeats.")
 
-        common_seqs = ['123', 'abc', 'qwerty', 'asdf']
-        if any(seq in password.lower() for seq in common_seqs):
-            score -= 15
-            feedback.append("⚠️ Common sequence detected")
-            suggestions.append("Avoid sequences like '123', 'abc', etc.")
+        common = ['123', 'abc', 'qwerty', 'password']
+        for c in common:
+            if c in p.lower():
+                s -= 15
+                bad.append("Avoid common patterns.")
+                break
 
-        common_pwds = ['password', '12345678', 'admin', 'welcome']
-        if password.lower() in common_pwds:
-            score -= 30
-            feedback.append("❌ Very common password!")
-            suggestions.append("Use something more unique and personal")
+        return max(s, 0), good, bad
 
-        return max(0, score), feedback, suggestions
-
-    def generate_strong_password(self):
+    def make_password(self):
         lower = string.ascii_lowercase
         upper = string.ascii_uppercase
-        digits = string.digits
+        nums = string.digits
         symbols = "!@#$%^&*()_+-="
+        all_set = lower + upper + nums + symbols
 
-        all_chars = lower + upper + digits + symbols
-        password = [
+        pwd = [
             random.choice(lower),
             random.choice(upper),
-            random.choice(digits),
+            random.choice(nums),
             random.choice(symbols)
-        ] + [random.choice(all_chars) for _ in range(8)]
-        random.shuffle(password)
+        ] + [random.choice(all_set) for _ in range(8)]
 
-        generated = ''.join(password)
-        self.password_entry.delete(0, tk.END)
-        self.password_entry.insert(0, generated)
-        self.show_password_var.set(True)
-        self.password_entry.config(show="")
+        random.shuffle(pwd)
+        new_pwd = ''.join(pwd)
 
-        messagebox.showinfo("Generated Password", "A strong password has been generated.\nMake sure to save it safely!")
-        self.check_password_strength()
+        self.entry.delete(0, tk.END)
+        self.entry.insert(0, new_pwd)
+        self.show_pw.set(True)
+        self.entry.config(show="")
+        self.check_pw()
 
     def run(self):
-        self.window.mainloop()
+        self.win.mainloop()
 
 if __name__ == "__main__":
-    app = PasswordStrengthChecker()
+    app = PasswordApp()
     app.run()
