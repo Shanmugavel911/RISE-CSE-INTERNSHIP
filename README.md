@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/1b8e5f2a-64c7-4e06-91d3-049d60b79e54)# RISE-CSE-INTERNSHIP
+ RISE-CSE-INTERNSHIP
 A git repo for internship 
 # 🔐 Password Strength Checker (My Project)
 
@@ -33,9 +33,7 @@ This is a Python project I built to help people check how strong their passwords
 Sample outputs:
 ![swappy-20250705-172501](https://github.com/user-attachments/assets/4f02dc83-6347-4b83-a2fc-69bea48c0d2d)
 ![swappy-20250705-172517](https://github.com/user-attachments/assets/e4eec9ab-ffda-46d7-9042-200b815bfb6d)
-
-
-
+![image](https://github.com/user-attachments/assets/1b8e5f2a-64c7-4e06-91d3-049d60b79e54)#
 
 
 
